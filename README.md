@@ -1,5 +1,5 @@
-# Personalized Study Planner
-
+# planner.ai
+(Updated Forked Repo)
 This is a web application that generates personalized study plans based on user inputs such as courses, deadlines, and study preferences. The app utilizes Cohere's large language model (LLM) to create a detailed and effective study schedule.
 
 ## Features
