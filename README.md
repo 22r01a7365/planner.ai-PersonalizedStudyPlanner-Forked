@@ -1,54 +1,73 @@
-# planner.ai
-(Updated Forked Repo)
-This is a web application that generates personalized study plans based on user inputs such as courses, deadlines, and study preferences. The app utilizes Cohere's large language model (LLM) to create a detailed and effective study schedule.
+# Planner.ai
+(Forked)
+Planner.ai is an intelligent study planning application built with Streamlit. It helps students create personalized study plans based on their course load, deadlines, and learning preferences.
 
 ## Features
 
-- **Dynamic Input Management**: Add and manage multiple courses and deadlines dynamically.
-- **Personalized Study Plan**: Receive a study plan tailored to your specific courses, deadlines, and study preferences.
-- **Interactive UI**: User-friendly interface with expandable sections for each course and deadline, and a checklist for managing tasks.
-- **Error Handling**: Comprehensive error handling to ensure a smooth user experience.
+- User registration and authentication
+- Difficulty assessment quiz for Computer Science
+- Personalized study plan generation using Cohere's AI
+- Interactive course and deadline management
+- Visualization of quiz results and study progress
 
-## Tech Stack
+## Technologies Used
 
-- **Streamlit**: For building the web application.
-- **Cohere**: For generating the study plan using an LLM.
-- **Pandas**: For data manipulation and display.
+- Python
+- Streamlit
+- SQLite
+- Cohere API
+- Matplotlib
+- NumPy
+- Pandas
+- scikit-learn
 
 ## Installation
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/personalized-study-planner.git
-   cd personalized-study-planner
+   ```
+   git clone https://github.com/yourusername/planner-ai.git
+   cd planner-ai
    ```
 
 2. Install the required packages:
-   ```bash
+   ```
    pip install -r requirements.txt
    ```
 
 3. Set up your Cohere API key:
-   - Create a file named `.streamlit/secrets.toml`.
-   - Add your API key in the following format:
-     ```toml
-     [cohere]
-     api_key = "YOUR_COHERE_API_KEY"
+   - Create a `.streamlit/secrets.toml` file in the project root
+   - Add your Cohere API key to the file:
      ```
-
-4. Run the application:
-   ```bash
-   streamlit run app.py
-   ```
+     [cohere]
+     api_key = "your_cohere_api_key_here"
+     ```
 
 ## Usage
 
-1. **Add Courses and Deadlines**: Use the "Add Course" button to dynamically add new courses and their respective deadlines.
-2. **Input Study Preferences**: Enter your study preferences in the provided text area.
-3. **Generate Study Plan**: Click the "Generate Study Plan" button to receive a detailed study schedule based on your inputs.
-4. **View and Manage**: Choose between the "Dashboard" and "Combined" views to visualize your study plan and manage your tasks.
+1. Run the Streamlit app:
+   ```
+   streamlit run app.py
+   ```
+
+2. Open your web browser and navigate to the URL provided by Streamlit (usually `http://localhost:8501`).
+
+3. Register for a new account or log in if you already have one.
+
+4. Complete the difficulty assessment quiz.
+
+5. Add your courses and deadlines.
+
+6. Input your study preferences.
+
+7. Generate your personalized study plan.
 
 ## Contributing
 
-Contributions are welcome! Please fork the repository and create a pull request with your changes.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
+
+## Acknowledgments
+
+- [Streamlit](https://streamlit.io/) for the awesome web app framework
+- [Cohere](https://cohere.ai/) for providing the AI model for study plan generation
+- [Open Trivia Database](https://opentdb.com/) for providing quiz questions
