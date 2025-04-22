@@ -219,6 +219,52 @@ def end_session():
         del st.session_state.username
     st.session_state.logged_in = False
 
+# Function to generate study plan
+def generate_study_plan(course_load, deadlines, preferences, quiz_results, api_key):
+    prompt = f"Generate a detailed study plan for the following courses: {course_load}. " \
+             f"The deadlines are: {deadlines}. The study preferences are: {preferences}. " \
+             f"Based on the quiz results, the student's strength in Computer Science is: {quiz_results}."
+    try:
+        cohere_client = cohere.Client(api_key)
+        response = cohere_client.generate(
+            model='command-xlarge-nightly',
+            prompt=prompt,
+            max_tokens=1024,
+            temperature=0.4
+        )
+        return response.generations[0].text
+    except Exception as e:
+        st.error(f"Error generating study plan: {e}")
+        return None
+
+# Function to get quiz questions from API
+def get_quiz_questions():
+    if 'quiz_questions' not in st.session_state:
+        url = "https://opentdb.com/api.php?amount=30&category=18&difficulty=easy&type=multiple"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            data = response.json()
+            questions = data['results']
+            
+            for idx, question in enumerate(questions):
+                question['id'] = str(idx)  # Ensure id is a string
+                question['question'] = html.unescape(question['question'])
+                options = question['incorrect_answers'] + [question['correct_answer']]
+                options = [html.unescape(option) for option in options]
+                np.random.shuffle(options)
+                question['options'] = options
+            
+            st.session_state.quiz_questions = questions
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error fetching quiz questions: {e}")
+            return []
+        except KeyError:
+            st.error("Unexpected response format from API. Please check the API documentation.")
+            return []
+    
+    return st.session_state.quiz_questions
+
 # Initialize the app
 def initialize():
     create_users_table()
@@ -296,21 +342,121 @@ def difficulty_assess():
         return
         
     st.header('📊 Difficulty Assessment Quiz')
-    # ... rest of your difficulty_assess function ...
+    st.write('Answer the following questions to assess your strengths and weaknesses. You can choose not to answer a question.')
+
+    questions = get_quiz_questions()
+
+    if 'user_answers' not in st.session_state:
+        st.session_state.user_answers = {}
+
+    for question in questions:
+        q_id = question['id']
+        q_text = question['question']
+        options = question['options'] + ['Skip']
+        
+        selected_option = st.radio(q_text, options, key=f"q_{q_id}")
+        st.session_state.user_answers[q_id] = selected_option
+
+    if st.button('Submit Quiz'):
+        st.session_state.page = 'evaluate_quiz'
+        st.experimental_rerun()
 
 def evaluate_quiz():
     if not check_authentication():
         return
         
     st.header('📊 Assessment Results')
-    # ... rest of your evaluate_quiz function ...
+    st.write('Here are your results for the quiz:')
 
+    subject_scores = {'Computers': 0}
+    total_questions = {'Computers': 0}
+    unanswered_count = 0
+
+    for question in st.session_state.quiz_questions:
+        q_id = question['id']
+        correct_ans = question['correct_answer']
+        user_ans = st.session_state.user_answers.get(q_id, "Skip")
+
+        if user_ans == "Skip":
+            unanswered_count += 1
+            continue
+
+        total_questions['Computers'] += 1
+
+        if user_ans == correct_ans:
+            subject_scores['Computers'] += 1
+
+    total_computers_questions = total_questions['Computers']
+    computers_score = (subject_scores['Computers'] / total_computers_questions) * 100 if total_computers_questions > 0 else 0
+    st.session_state.computers_score = computers_score    
+    
+    # Display results
+    fig1, ax1 = plt.subplots()
+    ax1.bar(['Computers'], [computers_score])
+    ax1.set_ylabel('Scores (%)')
+    ax1.set_title('Quiz Assessment Results')
+    ax1.set_ylim(0, 100)
+    ax1.text(0, computers_score + 1, f"{computers_score:.2f}%", ha='center', va='bottom')
+    st.pyplot(fig1)
+
+    fig2, ax2 = plt.subplots()
+    answered_count = total_computers_questions
+    counts = [answered_count, unanswered_count]
+    ax2.bar(['Answered', 'Unanswered'], counts)
+    ax2.set_ylabel('Number of Questions')
+    ax2.set_title('Answered vs Unanswered Questions')
+    st.pyplot(fig2)
+
+    st.write('*Strengths and Weaknesses*')
+    st.write(f'Computers: {"Strong" if computers_score > 70 else "Weak"}')
+
+    if st.button('Continue'):
+        st.session_state.page = 'generate_study_plan'
+        st.experimental_rerun()
+
+# Application page
 def app():
     if not check_authentication():
         return
         
     st.header('🗓️ Add Your Courses and Deadlines')
-    # ... rest of your app function ...
+
+    if 'courses' not in st.session_state:
+        st.session_state.courses = []
+
+    def add_course():
+        st.session_state.courses.append({'name': '', 'start_date': datetime.date.today(), 'end_date': datetime.date.today()})
+
+    st.button('Add Course', on_click=add_course)
+
+    for idx, course in enumerate(st.session_state.courses):
+        with st.expander(f'Course {idx+1}'):
+            name = st.text_input(f'Course Name {idx+1}', key=f'course_{idx}', value=course['name'])
+            start_date = st.date_input(f'Start Date {idx+1}', key=f'start_date_{idx}', value=course['start_date'])
+            end_date = st.date_input(f'End Date {idx+1}', key=f'end_date_{idx}', value=course['end_date'])
+            st.session_state.courses[idx]['name'] = name
+            st.session_state.courses[idx]['start_date'] = start_date
+            st.session_state.courses[idx]['end_date'] = end_date
+
+    st.header('📝 Input Your Study Preferences')
+    preferences = st.text_area('Personal Preferences (e.g., study in the morning, prefer short sessions)', placeholder='Enter any study preferences')
+
+    if st.button('Generate Study Plan'):
+        if st.session_state.courses and preferences:
+            course_load = [item['name'] for item in st.session_state.courses]
+            deadlines_text = "; ".join([f"{item['name']} from {item['start_date']} to {item['end_date']}" for item in st.session_state.courses])
+            quiz_results = "Strong" if st.session_state.get('computers_score', 0) > 70 else "Weak"
+            study_plan = generate_study_plan(", ".join(course_load), deadlines_text, preferences, quiz_results, cohere_api_key)
+            
+            if study_plan:
+                st.subheader('📅 Course Schedule')
+                for course in st.session_state.courses:
+                    st.write(f"{course['name']}: {course['start_date']} to {course['end_date']}")
+                
+                st.subheader('📝 Generated Study Plan')
+                st.write(study_plan)
+        else:
+            st.error('Please fill in all the fields.')
 
 # Main app with secure routing
 def main():
