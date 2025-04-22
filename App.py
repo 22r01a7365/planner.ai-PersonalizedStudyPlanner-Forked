@@ -22,7 +22,7 @@ def add_bg_from_url():
          f"""
          <style>
          .stApp {{
-             background-image: url("https://getwallpapers.com/wallpaper/full/2/2/5/633544.jpg");
+             background-image: url("https://images2.alphacoders.com/100/1006924.png");
              background-attachment: fixed;
              background-size: cover;
              background-position: center;
