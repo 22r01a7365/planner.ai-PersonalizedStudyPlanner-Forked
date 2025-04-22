@@ -226,13 +226,14 @@ def generate_study_plan(course_load, deadlines, preferences, quiz_results, api_k
              f"Based on the quiz results, the student's strength in Computer Science is: {quiz_results}."
     try:
         cohere_client = cohere.Client(api_key)
-        response = cohere_client.generate(
+        # Using the chat API instead of generate
+        response = cohere_client.chat(
             model='command-xlarge-nightly',
-            prompt=prompt,
+            message=prompt,
             max_tokens=1024,
             temperature=0.4
         )
-        return response.generations[0].text
+        return response.text  # The chat API response has different structure
     except Exception as e:
         st.error(f"Error generating study plan: {e}")
         return None
@@ -304,7 +305,7 @@ def register():
                 else:
                     if register_user(username, email, password):
                         st.session_state.registration_success = True
-                        st.experimental_rerun()
+                        st.rerun()
                     else:
                         st.error("Registration failed. Please try again.")
     else:
@@ -324,7 +325,7 @@ def login():
                 create_session(username)
                 st.success("Login successful!")
                 st.session_state.page = 'difficulty_assess'
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Invalid username or password")
 
@@ -333,7 +334,7 @@ def check_authentication():
     if not validate_session():
         st.session_state.page = 'login'
         st.error("Please login to access this page")
-        st.experimental_rerun()
+        st.rerun()
         return False
     return True
 
@@ -359,7 +360,7 @@ def difficulty_assess():
 
     if st.button('Submit Quiz'):
         st.session_state.page = 'evaluate_quiz'
-        st.experimental_rerun()
+        st.rerun()
 
 def evaluate_quiz():
     if not check_authentication():
@@ -412,7 +413,7 @@ def evaluate_quiz():
 
     if st.button('Continue'):
         st.session_state.page = 'generate_study_plan'
-        st.experimental_rerun()
+        st.rerun()
 
 # Application page
 def app():
@@ -474,7 +475,7 @@ def main():
         if st.sidebar.button('Logout'):
             end_session()
             st.session_state.page = 'login'
-            st.experimental_rerun()
+            st.rerun()
         
         if st.sidebar.button('Back'):
             if st.session_state.page == 'difficulty_assess':
@@ -484,7 +485,7 @@ def main():
                 st.session_state.page = 'difficulty_assess'
             elif st.session_state.page == 'generate_study_plan':
                 st.session_state.page = 'evaluate_quiz'
-            st.experimental_rerun()
+            st.rerun()
         
         if st.session_state.page == 'difficulty_assess':
             difficulty_assess()
